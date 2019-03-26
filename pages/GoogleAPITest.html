@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="jquery-1.7.1.min.js"></script> <!--JSON library-->
+		<script type="text/javascript" src="jquery.dataTables.min"></script> <!--TableSort library-->
+		<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script> -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="jquery.columns.min.js"></script>
+		<link rel="stylesheet" href="css/clean.css">  <!-- Cascade style sheets - this was embedded with the columns plugin but I modified some of its characteristics -->
+        <link href='https://fonts.googleapis.com/css?family=La+Belle+Aurore' rel='stylesheet' type='text/css'> <!-- Custom font for the page -->
+        <style type="text/css">
+            body          {background-color: #f5f5f5;}
+            #buttonholder {width:95%;
+                           height: 50px;
+                           margin-left: auto;
+                           margin-right: auto;
+                           text-align: center;
+                           vertical-align: bottom;
+						   }
+             #map_canvas { width: 95%; 
+                        height: 450px; 
+                        border: 3px solid #666666; 
+                        margin-left: auto;
+                        margin-right: auto;
+                       }  
+             #columnsdiv { width: 95%;
+						margin-left: auto;
+                        margin-right: auto;}
+             .myButton {
+              -webkit-border-radius: 0;
+              vertical-align: bottom;
+              -moz-border-radius: 0;
+              border-radius: 0px;
+              font-family: Arial;
+              color: #000000;
+              font-size: 10px;
+              background: #f5f5f5;
+              padding: 3px 5px 3px 5px;
+              border: solid #6e7275 2px;
+              text-decoration: none;
+            }
+            .myButton:hover {
+              background: #3cb0fd;
+              text-decoration: none;
+            }
+            h1 {
+                font-family: 'La Belle Aurore', cursive;
+                font-size: 75px;
+                font-style: normal;
+                font-variant: normal;
+                font-weight: 500;
+                line-height: 26.4px;
+                text-align: center;
+            }
+            h2 {
+                font-family: 'La Belle Aurore', cursive;
+                font-size: 15px;
+                font-style: normal;
+                font-variant: normal;
+                text-align: center;
+            }
+			#infotext  {
+                font-family: 'La Belle Aurore', cursive;
+                font-size: 26px;
+                font-style: normal;
+                font-variant: normal;
+                text-align: center;
+            }
+            
+</style>
+  </head>
+  <body>
+  <div id="wrapper">
+	    <!-- This will display as the title and uses a custom font -->
+      <h1>Windfarms of the USA</h1>
+	</div>
+	<div id="buttonholder">
+        <label style="font-family: Arial; font-size: 10px"> Max Radius(m): </label> <input type ="text" class="myButton" id ="maxRadius" value="250000"/> 
+        <!-- These are the two options to be used for graduate circle manipulation -->
+		<select id="farmtype" class = "myButton" size="2">
+			<option value="0">Number of Turbines</option>
+			<option value="1" selected="selected">Total Mw</option>
+			</select>
+        <button type="button" class="myButton" id="calculateRadii">Submit</button>
+		<button class="myButton" onclick="ShowCircles()">Show Circles</button>
+		<button class="myButton" onclick="HideCircles()">Hide Circles</button>
+		<button class="myButton" onclick="ShowTurbines()">Show Turbines</button>
+		<button class="myButton" onclick="HideTurbines()">Hide Turbines</button>
+        <button type="button" class="myButton" id="OriginalZoom">Return to Original Extents</button>
+		<button type="button" class="myButton" id="Lower48">Zoom to Lower 48</button>
+        <button type="button" class="myButton" id="Alaska">Zoom to Alaska</button>
+        <button type="button" class="myButton" id="Hawaii">Zoom to Hawaii</button><br><br>
+      </div>
+    <div id="map_canvas"></div>
+    <script>
+      var map;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map_canvas'), {
+          zoom: 2,
+          center: new google.maps.LatLng(2.8,-187.3),
+          mapTypeId: 'terrain'
+        });
+				
+        // Create a <script> tag and set the USGS URL as the source.
+        var script = document.createElement('script');
+        // This example uses a local copy of the GeoJSON stored at
+        // http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojsonp
+        script.src = 'USwindfarmcentroids.json';
+        document.getElementsByTagName('objectid')[0].appendChild(script);
+		
+		// This section will display a marker representing each individual windfarm on the map. This
+            // marker will also have an infowindow displaying some basic information about the windfarm.
+            // These points will remain on the map permanently. 
+			$.getJSON("USwindfarmcentroids.json",function(json){CreateTurbineMarkers(json);});
+      }
+
+	function CreateTurbineMarkers(json){
+				var n = json.features.length;
+                // for loop used to build the markers and the infowindow information.  The markers use a custom windturbine symbol. 
+				for (var i = 0; i<n; i++){
+					StartLL = new google.maps.LatLng(json.features[i].geometry.coordinates[1],json.features[i].geometry.coordinates[0]);;
+                    var farmname = json.features[i].properties.Onshore__3;
+                    var farmcounty = json.features[i].properties.Onshore_22;
+                    var farmstate = json.features[i].properties.Onshore_21;
+					var farmcount = json.features[i].properties.Onshore__4;
+					var farmstart = json.features[i].properties.Onshore__5;
+					var farmmw = json.features[i].properties.Onshore_13;
+                    var infoString = '<img width="200" border="2" align="Center" src="windmills.png" alt="Missing"><br>'
+					+"<center><p id='infotext'>"+farmname+"</p></center>"
+                    +"<center>"+farmcounty+" County, "+farmstate+"</center>"
+					+"<center><br>"
+					+"<center><b>Production Started: </b>"+farmstart+"</center><br>"
+					+"<center><b>Mw Produced: </b> "+farmmw+"</center><br>"
+					+"<center><b>Number of Turbines: </b>"+farmcount+"</center><br>";
+                    //var infoString = '<center><b>Windfarm:   </b></center>'+ '<center>'+farmname+'</center>';
+					var marker = new google.maps.Marker({
+						position: StartLL,
+						map: 	map,
+						title: farmname,
+						info: infoString,
+						icon: "redmeasle2.png",
+						});
+					//
+                    // This section creates the actual infowindows
+					var infowindow = new google.maps.InfoWindow({				       
+					});
+					// Listener added so that when markers are clicked these will display. This also sets the content of the infoWindow 
+					//to the info that was stored in each marker generated previously
+					google.maps.event.addListener(marker, 'click', function() { 
+						infowindow.setContent(this.info);
+						infowindow.open(map,this);                
+                        });
+					// Mouseout created to close infoWindow
+					google.maps.event.addListener(marker, 'mouseout', function(){
+						infowindow.close(this);})
+						}
+                };
+
+      // Loop through the results array and place a marker for each
+      // set of coordinates.
+      window.eqfeed_callback = function(results) {
+        for (var i = 0; i < results.features.length; i++) {
+          var coords = results.features[i].geometry.coordinates;
+          var latLng = new google.maps.LatLng(coords[1],coords[0]);
+          var marker = new google.maps.Marker({
+            position: latLng,
+            map: map
+          });
+        }
+      }
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD57CnigfSfo9NFaAXRErd2eJUQw3mx84U&callback=initMap"></script>
+  </body>
+</html>
