@@ -8,8 +8,8 @@
 		<!--<script type="text/javascript" src="jquery.dataTables.min"></script> --> <!--TableSort library-->
 		<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script> -->
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<script src="https://weeks2003.github.io/TakeAHike/jquery.columns.min.js"></script>
-		<link rel="stylesheet" href="https://weeks2003.github.io/TakeAHike/css/clean.css">  <!-- Cascade style sheets - this was embedded with the columns plugin but I modified some of its characteristics -->
+		<script src="https://weeks2003.github.io/TakeAHike/Windfarms/jquery.columns.min.js"></script>
+		<link rel="stylesheet" href="https://weeks2003.github.io/TakeAHike/Windfarms/css/clean.css">  <!-- Cascade style sheets - this was embedded with the columns plugin but I modified some of its characteristics -->
         <link href='https://fonts.googleapis.com/css?family=La+Belle+Aurore' rel='stylesheet' type='text/css'> <!-- Custom font for the page -->
         <style type="text/css">
             body          {background-color: #f5f5f5;}
@@ -97,12 +97,12 @@
       </div>
       <div id="map_canvas"></div><br>
 	  <div id="columnsdiv"></div><br><br>
-      <h2><a href="https://biosurvey.ku.edu/directory/david-weekley">A David Weekley Production</a></h2>
+      <h2><a href="https://www.linkedin.com/in/david-weekley-58548886/">A David Weekley Production</a></h2>
       </div>
 <script>
 //Creates the table
   $.ajax({
-      url:'https://weeks2003.github.io/TakeAHike/windfarmcentroidstable.json',
+      url:'https://weeks2003.github.io/TakeAHike/Windfarms/windfarmcentroidstable.json',
       dataType: 'json', 
       success: function(json) { 
           example2 = $('#columnsdiv').columns({
@@ -151,7 +151,7 @@
 			// This section will display a marker representing each individual windfarm on the map. This
             // marker will also have an infowindow displaying some basic information about the windfarm.
             // These points will remain on the map permanently. 
-			$.getJSON("https://weeks2003.github.io/TakeAHike/USwindfarmcentroids2.json",function(json){CreateTurbineMarkers(json);});
+			$.getJSON("https://weeks2003.github.io/TakeAHike/Windfarms/USwindfarmcentroids2.json",function(json){CreateTurbineMarkers(json);});
             //
             // This says it creates the turbine makers, but it is actually creating the centroids. 
             function CreateTurbineMarkers(json){
@@ -178,7 +178,7 @@
 						map: 	map,
 						title: farmname,
 						info: infoString,
-						icon: "https://weeks2003.github.io/TakeAHike/redmeasle2.png",
+						icon: "https://weeks2003.github.io/TakeAHike/Windfarms/redmeasle2.png",
 						});
 					//
                     // This section creates the actual infowindows
@@ -247,7 +247,7 @@
 			var featuretypes = ["Onshore__4", "Onshore_13"]; // Onshore__4 is TurbCount & Onshore_13 is TotMw
 			var maxRadius=parseFloat(document.getElementById('maxRadius').value);
 			//
-            $.getJSON("https://weeks2003.github.io/TakeAHike/USwindfarmcentroids2.json",function(json){CreateWindCircles(json);});
+            $.getJSON("https://weeks2003.github.io/TakeAHike/Windfarms/USwindfarmcentroids2.json",function(json){CreateWindCircles(json);});
             //
             // second functionto create the graduated circles, this one calls the first one. 
 			function CreateWindCircles(json) {
@@ -331,7 +331,7 @@
 			//
 			//Get city data from JSON file and add city circles to the map
 			var tmarkers;
-            $.getJSON("https://weeks2003.github.io/TakeAHike/usawindturbines2.json",function(json){CreateTMarkers(json);});
+            $.getJSON("https://weeks2003.github.io/TakeAHike/Windfarms/usawindturbines2.json",function(json){CreateTMarkers(json);});
 		    //
 			function CreateTMarkers(json) {
 				//get the number of cities
