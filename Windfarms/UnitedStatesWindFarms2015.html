@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>U.S. Windfarms</title> 
+	<!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD57CnigfSfo9NFaAXRErd2eJUQw3mx84U&callback=initMap"></script> <!--GM API-->
+    	<script type="text/javascript" src="jquery-1.7.1.min.js"></script> <!--JSON library-->
+		<!--<script type="text/javascript" src="jquery.dataTables.min"></script> --> <!--TableSort library-->
+		<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script> -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="https://weeks2003.github.io/TakeAHike/Windfarms/jquery.columns.min.js"></script>
+		<link rel="stylesheet" href="https://weeks2003.github.io/TakeAHike/Windfarms/css/clean.css">  <!-- Cascade style sheets - this was embedded with the columns plugin but I modified some of its characteristics -->
+        <link href='https://fonts.googleapis.com/css?family=La+Belle+Aurore' rel='stylesheet' type='text/css'> <!-- Custom font for the page -->
+        <style type="text/css">
+            body          {background-color: #f5f5f5;}
+            #buttonholder {width:95%;
+                           height: 50px;
+                           margin-left: auto;
+                           margin-right: auto;
+                           text-align: center;
+                           vertical-align: bottom;
+						   }
+             #map_canvas { width: 95%; 
+                        height: 400px; 
+                        border: 3px solid #666666; 
+                        margin-left: auto;
+                        margin-right: auto;
+                       }  
+             #columnsdiv { width: 95%;
+						margin-left: auto;
+                        margin-right: auto;}
+             .myButton {
+              -webkit-border-radius: 0;
+              vertical-align: bottom;
+              -moz-border-radius: 0;
+              border-radius: 0px;
+              font-family: Arial;
+              color: #000000;
+              font-size: 10px;
+              background: #f5f5f5;
+              padding: 3px 5px 3px 5px;
+              border: solid #6e7275 2px;
+              text-decoration: none;
+            }
+            .myButton:hover {
+              background: #3cb0fd;
+              text-decoration: none;
+            }
+            h1 {
+                font-family: 'La Belle Aurore', cursive;
+                font-size: 75px;
+                font-style: normal;
+                font-variant: normal;
+                font-weight: 500;
+                line-height: 26.4px;
+                text-align: center;
+            }
+            h2 {
+                font-family: 'La Belle Aurore', cursive;
+                font-size: 15px;
+                font-style: normal;
+                font-variant: normal;
+                text-align: center;
+            }
+			#infotext  {
+                font-family: 'La Belle Aurore', cursive;
+                font-size: 26px;
+                font-style: normal;
+                font-variant: normal;
+                text-align: center;
+            }
+            
+</style>
+		<!-- used http://www.convertcsv.com/csv-to-json.htm to create json for table-->
+	</head>
+	
+  <body onload="ShowCircles()">
+	<div id="wrapper">
+	    <!-- This will display as the title and uses a custom font -->
+      <h1>Windfarms of the USA</h1>
+    <div id="buttonholder">
+        <label style="font-family: Arial; font-size: 10px"> Max Radius(m): </label> <input type ="text" class="myButton" id ="maxRadius" value="250000"/> 
+        <!-- These are the two options to be used for graduate circle manipulation -->
+		<select id="farmtype" class = "myButton" size="2">
+			<option value="0">Number of Turbines</option>
+			<option value="1" selected="selected">Total Mw</option>
+			</select>
+        <button type="button" class="myButton" id="calculateRadii">Submit</button>
+		<button class="myButton" onclick="ShowCircles()">Show Circles</button>
+		<button class="myButton" onclick="HideCircles()">Hide Circles</button>
+		<button class="myButton" onclick="ShowTurbines()">Show Turbines</button>
+		<button class="myButton" onclick="HideTurbines()">Hide Turbines</button>
+        <button type="button" class="myButton" id="OriginalZoom">Return to Original Extents</button>
+		<button type="button" class="myButton" id="Lower48">Zoom to Lower 48</button>
+        <button type="button" class="myButton" id="Alaska">Zoom to Alaska</button>
+        <button type="button" class="myButton" id="Hawaii">Zoom to Hawaii</button><br><br>
+      </div>
+      <div id="map_canvas"></div><br>
+	  <div id="columnsdiv"></div><br><br>
+      <h2><a href="https://www.linkedin.com/in/david-weekley-58548886/">A David Weekley Production</a></h2>
+      </div>
+<script>
+//Creates the table
+  $.ajax({
+      url:'https://weeks2003.github.io/TakeAHike/Windfarms/windfarmcentroidstable.json',
+      dataType: 'json', 
+      success: function(json) { 
+          example2 = $('#columnsdiv').columns({
+              data:json, 
+          }); 
+      }
+  }); 
+ //enables click to zoom function for each row in the table   
+ $('#columnsdiv').on('click', 'tr', function () {
+        var name = $('td', this).eq(0).text();
+        var latlong = name.split(", ").map(Number);
+        mapzoom = {lat:latlong[0], lng: latlong[1]};
+        map.setZoom(10);
+        map.panTo(mapzoom)
+       } );
+</script>
+<script>
+			//create a map
+			function initMap(){
+			var minzoomlevel = 3;
+			 
+			var mapOptions = {
+					zoom: minzoomlevel,
+					center: new google.maps.LatLng(50, -120),
+					mapTypeId: 'terrain' //google.maps.MapTypeId.MAP
+			};
+			var map = new google.maps.Map(document.getElementById('map_canvas'),mapOptions);
+			// These styles are used to customize the map colors.  Probably could move them to the CSS up above but they are operational here. 
+			var styles = [
+				{"featureType": "landscape.natural", "stylers": [ { "color": "#e4e4de" }
+				]},{"featureType": "water", "stylers": [ { "hue": "#808080" }, { "color": "#808080" }
+				]},{featureType: "road",elementType: "geometry",
+				stylers: [{ lightness: 50 }, {color: "#808080"},{ visibility: "simplified" }]
+			    },{featureType: "road",	elementType: "labels",stylers: [{ visibility: "off" }]}];
+				map.setOptions({styles: styles});
+				
+				
+            // 
+            //
+            // Listener created to set the maximum zoom out level.  This is done to prevent the map from
+            // zooming too far out and attempting to draw markers multiple times. 
+            //google.maps.event.addListener(map, 'zoom_changed', function() {
+			map.addListener(map, 'zoom_changed', function() {
+				if (map.getZoom() < minzoomlevel) map.setZoom(minzoomlevel);
+			});
+			}
+            //
+			// This section will display a marker representing each individual windfarm on the map. This
+            // marker will also have an infowindow displaying some basic information about the windfarm.
+            // These points will remain on the map permanently. 
+			$.getJSON("https://weeks2003.github.io/TakeAHike/Windfarms/USwindfarmcentroids2.json",function(json){CreateTurbineMarkers(json);});
+            //
+            // This says it creates the turbine makers, but it is actually creating the centroids. 
+            function CreateTurbineMarkers(json){
+				var n = json.features.length;
+                // for loop used to build the markers and the infowindow information.  The markers use a custom windturbine symbol. 
+				for (var i = 0; i<n; i++){
+					StartLL = new google.maps.LatLng(json.features[i].geometry.coordinates[1],json.features[i].geometry.coordinates[0]);;
+                    var farmname = json.features[i].properties.Onshore__3;
+                    var farmcounty = json.features[i].properties.Onshore_22;
+                    var farmstate = json.features[i].properties.Onshore_21;
+					var farmcount = json.features[i].properties.Onshore__4;
+					var farmstart = json.features[i].properties.Onshore__5;
+					var farmmw = json.features[i].properties.Onshore_13;
+                    var infoString = '<img width="200" border="2" align="Center" src="windmills.png" alt="Missing"><br>'
+					+"<center><p id='infotext'>"+farmname+"</p></center>"
+                    +"<center>"+farmcounty+" County, "+farmstate+"</center>"
+					+"<center><br>"
+					+"<center><b>Production Started: </b>"+farmstart+"</center><br>"
+					+"<center><b>Mw Produced: </b> "+farmmw+"</center><br>"
+					+"<center><b>Number of Turbines: </b>"+farmcount+"</center><br>";
+                    //var infoString = '<center><b>Windfarm:   </b></center>'+ '<center>'+farmname+'</center>';
+					var marker = new google.maps.Marker({
+						position: StartLL,
+						map: 	map,
+						title: farmname,
+						info: infoString,
+						icon: "https://weeks2003.github.io/TakeAHike/Windfarms/redmeasle2.png",
+						});
+					//
+                    // This section creates the actual infowindows
+					var infowindow = new google.maps.InfoWindow({				       
+					});
+					// Listener added so that when markers are clicked these will display. This also sets the content of the infoWindow 
+					//to the info that was stored in each marker generated previously
+					google.maps.event.addListener(marker, 'click', function() { 
+						infowindow.setContent(this.info);
+						infowindow.open(map,this);                
+                        });
+					// Mouseout created to close infoWindow
+					google.maps.event.addListener(marker, 'mouseout', function(){
+						infowindow.close(this);})
+						}
+                };
+			// Click events to serve zoom buttons for entire US, Lower 48,
+            // Hawaii, and Alaska. 
+            //
+            document.getElementById("OriginalZoom").onclick =function(){
+			WAAZoom = {lat: 50, lng: -120};
+			map.setZoom(3);
+			map.panTo(WAAZoom)
+			};
+            
+			document.getElementById("Lower48").onclick =function(){
+			WAAZoom = {lat: 38.09024, lng: -95.712891};
+			map.setZoom(4);
+			map.panTo(WAAZoom)
+			};
+            
+            document.getElementById("Alaska").onclick =function(){
+			WAAZoom = {lat: 63.298725, lng: -151.480753};
+			map.setZoom(4);
+			map.panTo(WAAZoom)
+			};
+            
+            document.getElementById("Hawaii").onclick =function(){
+			WAAZoom = {lat: 21.029071, lng: -157.188971};
+			map.setZoom(6);
+			map.panTo(WAAZoom)
+			};
+			           
+      </script>
+<!-- Script to create circles based upon Mw or the number of turbines -->
+	  <script>
+	  // Function used to create the graduated circles. 
+	  function CreateACircle(loc, radius){
+				var populationOptions = {
+						strokeColor: '#0000dd',
+						strokeOpacity: 0.2,
+						strokeWeight: 2,
+						fillColor: '#0000dd',
+						fillOpacity: 0.2,
+						center: loc,
+						radius: radius
+					};
+				return new google.maps.Circle(populationOptions);
+			}
+					
+			//Get windfarm data from JSON file and add circles to the map
+			var windCircles;
+			var featurenumbers;
+			var featuremaximums;
+			var radiusbyfeature;
+			var featuretypes = ["Onshore__4", "Onshore_13"]; // Onshore__4 is TurbCount & Onshore_13 is TotMw
+			var maxRadius=parseFloat(document.getElementById('maxRadius').value);
+			//
+            $.getJSON("https://weeks2003.github.io/TakeAHike/Windfarms/USwindfarmcentroids2.json",function(json){CreateWindCircles(json);});
+            //
+            // second functionto create the graduated circles, this one calls the first one. 
+			function CreateWindCircles(json) {
+				//get the number of windfarms
+				var n=json.features.length;
+				var m=featuretypes.length;
+                featurenumbers= new Array(m);
+                featuremaximums = new Array(m);
+                radiusbyfeature = new Array(m);
+				for (var k=0;k<m;k++){
+					featurenumbers[k] = new Array(n);
+					for (var i=0;i<n;i++){
+						featurenumbers[k][i]=eval("json.features[i].properties."+featuretypes[k]);
+                        featuremaximums[k] = Math.max.apply(null, featurenumbers[k]);
+						};
+					};
+                for (var k=0;k<m;k++){
+                    radiusbyfeature[k] = new Array(n);
+                    for (var i=0;i<n;i++){
+                        radiusbyfeature[k][i]=maxRadius*Math.pow((featurenumbers[k][i])/(featuremaximums[k]),0.57);
+                    };
+                }
+                var inputWtype = parseFloat(document.getElementById('farmtype').value);
+                var radius = radiusbyfeature[inputWtype];
+				//create circles for each city
+				windCircles=new Array(n);
+				for (var i = 0; i <n; i++) {
+					windLoc=new google.maps.LatLng(json.features[i].geometry.coordinates[1],json.features[i].geometry.coordinates[0]);
+					windCircles[i]=CreateACircle(windLoc,radius[i]);
+				}};
+                //
+                //
+                //This section will resize the circles based upon the selection -Mw or # 
+                // of turbines as well as the maximum radius size specified.  
+                document.getElementById("calculateRadii").onclick =function(){   
+                    var inputWtype = parseFloat(document.getElementById('farmtype').value);
+                    var maxradiusnew = parseFloat(document.getElementById('maxRadius').value);
+                    //var windindex = windtype.indexOf(inputWtype);
+                    var radiusbynew = new Array(2);
+                    for (var k=0;k<2;k++){
+                        radiusbynew[k] = new Array(1136);
+                        for (var i=0;i<1136;i++){
+                            radiusbynew[k][i]=maxradiusnew*Math.pow((featurenumbers[k][i])/(featuremaximums[k]),0.57);
+                        };
+                }
+                var radius = radiusbynew[inputWtype];
+				for (var i = 0; i <1136; i++) {			
+					windCircles[i].setRadius(radius[i]);
+				    }
+                }
+			    //
+			    // function to display circles
+                function ShowCircles() {
+                    var n=windCircles.length;
+                    for (var i = 0; i <n; i++) {
+                        windCircles[i].setMap(map);
+                    }
+                }
+                //
+			    // function to hide circles
+                function HideCircles() {
+                    var n=windCircles.length;
+                    for (var i = 0; i <n; i++) {
+                        windCircles[i].setMap(null);
+                    }
+                }
+	  
+	  </script>
+      <script>
+      // These are the functions that actually create the windturbines. 
+       function CreateATurbine(loc, tname){
+                for (var i=0;i<3882;i++){
+				var TurbineOptions = {
+						title: tname,
+						position: loc,
+                        icon: "blacksquare.png"
+						
+					};}
+                return new google.maps.Marker(TurbineOptions);
+			}
+			//
+			//Get city data from JSON file and add city circles to the map
+			var tmarkers;
+            $.getJSON("https://weeks2003.github.io/TakeAHike/Windfarms/usawindturbines2.json",function(json){CreateTMarkers(json);});
+		    //
+			function CreateTMarkers(json) {
+				//get the number of cities
+				var n=json.features.length; 		
+               	//create circles for each city
+				tmarkers=new Array(n);
+                turbinenames= new Array(n);
+				for (var i = 0; i <n; i++) {
+					turbname = json.features[i].properties.site_name;
+                    turbLoc=new google.maps.LatLng(json.features[i].geometry.coordinates[1],json.features[i].geometry.coordinates[0]);
+					tmarkers[i]=CreateATurbine(turbLoc, turbname);
+				}
+			}
+			//
+			// function to show the turbines.
+			function ShowTurbines() {
+				var n=tmarkers.length;
+				for (var i = 0; i <n; i++) {
+					tmarkers[i].setMap(map);
+				}
+			}
+			//
+			// function to hide the turbines.
+			function HideTurbines() {
+				var n=tmarkers.length;
+				for (var i = 0; i <n; i++) {
+					tmarkers[i].setMap(null);
+				}
+			}
+      </script>
+	  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_ERLtyZ3hnNeOP3D_QWH5uzXm3NfNbF8&callback=initMap"></script> <!--GM API-->
+     </body>
+</html>
