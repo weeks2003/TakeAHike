@@ -147,7 +147,7 @@
 			map.addListener(map, 'zoom_changed', function() {
 				if (map.getZoom() < minzoomlevel) map.setZoom(minzoomlevel);
 			});
-			}
+			
             //
 			// This section will display a marker representing each individual windfarm on the map. This
             // marker will also have an infowindow displaying some basic information about the windfarm.
@@ -223,9 +223,7 @@
 			map.panTo(WAAZoom)
 			};
 			           
-      </script>
-<!-- Script to create circles based upon Mw or the number of turbines -->
-	  <script>
+ 
 	  // Function used to create the graduated circles. 
 	  function CreateACircle(loc, radius){
 				var populationOptions = {
@@ -316,8 +314,6 @@
                     }
                 }
 	  
-	  </script>
-      <script>
       // These are the functions that actually create the windturbines. 
        function CreateATurbine(loc, tname){
                 for (var i=0;i<3882;i++){
@@ -361,7 +357,7 @@
 				for (var i = 0; i <n; i++) {
 					tmarkers[i].setMap(null);
 				}
-			}
+			}}
       </script>
 	  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_ERLtyZ3hnNeOP3D_QWH5uzXm3NfNbF8&callback=initMap"></script> <!--GM API-->
      </body>
